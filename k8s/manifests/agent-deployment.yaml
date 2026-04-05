@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infrawatch-agent
+  namespace: infrawatch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infrawatch-agent
+  template:
+    metadata:
+      labels:
+        app: infrawatch-agent
+    spec:
+      containers:
+        - name: agent
+          image: 492851/infrawatch-agent:latest
+          env:
+            - name: BACKEND_URL
+              value: "http://infrawatch-backend:3000"
+            - name: AGENT_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: INTERVAL
+              value: "10000"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: proc
+              mountPath: /host/proc
+              readOnly: true
+            - name: sys
+              mountPath: /host/sys
+              readOnly: true
+      volumes:
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
+      hostPID: true
